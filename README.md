@@ -4,4 +4,8 @@
 
 
  Scripts are written for python versions 3.6+  
- Usage instructions can be obtained by typing python scriptname.py -h
+ Usage instructions can be obtained by typing: _python scriptname.py -h_
+
+
+Typical required packages are pandas, matplotlib, numpy, and scipy.
+I try to include a list of required packages for the script in the print out for _python scriptname.py -h_.
