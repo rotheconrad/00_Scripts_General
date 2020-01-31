@@ -38,7 +38,7 @@ def Fasta_rename_sequences(infile, prefix):
     with open(infile, 'r+') as f, open(outfile, 'w') as o:
         i = 1
         for name, seq in read_fasta(f):
-            newName = '>%s_%d\n%s\n' % (prefix, i, seq)
+            newName = f'>{prefix}_{i:04}\n{seq}\n'
             o.write(newName)
             i += 1
 
