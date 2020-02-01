@@ -31,7 +31,7 @@ This script returns the following files:
 
 This script requires the following packages:
 
-    * argparse
+    * argparse, sys
     * collection.defaultdict
     * itertools
 
@@ -46,7 +46,7 @@ All rights reserved
 -------------------------------------------
 '''
 
-import argparse
+import argparse, sys
 import itertools
 from collections import defaultdict
 
@@ -196,8 +196,10 @@ def get_relative_abundance(wg_tad, mtg):
 
     # check if fasta or fastq
     file_type = mtg.split('.')[-1]
+    fqtype = ['fastq', 'fq']
+    fatype = ['fasta', 'fna', 'fst', 'fa']
 
-    if file_type == 'fastq':
+    if file_type in fqtype:
         line_count = 0
 
         with open(mtg, 'r') as f:
@@ -205,16 +207,16 @@ def get_relative_abundance(wg_tad, mtg):
                 line_count += 1
                 if line_count%4 == 0:
                     total_metagenome_bp += len(l.rstrip())
-    elif file_type in ['fasta', 'fna', 'fst', 'fa']:
+    elif file_type in fatype:
         with open(mtg, 'r') as f:
             for name, seq in read_fasta(f):
                 total_metagenome_bp += len(seq)
     else:
         print(
-            'Error in determining metagenome format of fasta or fastq.'
-            'Please double check metagenome file type and try again.'
-            'Metagenome file should be either fasta or fastq format with'
-            'file extension of *.fastq or *.fasta.'
+            'Error in determining metagenome format of fasta or fastq. '
+            'Please double check metagenome file type and try again. '
+            'Metagenome file should be either fasta or fastq format with '
+            f'file extension of one of {fqtype} or {fatype}.'
             )
         sys.exit()
 
