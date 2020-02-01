@@ -255,7 +255,7 @@ def get_relative_abundance(wg_tad, mtg):
                 line_count += 1
                 if line_count%4 == 0:
                     total_metagenome_bp += len(l.rstrip())
-    elif file_type in ['fasta', 'fna', 'fst', ]:
+    elif file_type in ['fasta', 'fna', 'fst', 'fa']:
         with open(mtg, 'r') as f:
             for name, seq in read_fasta(f):
                 total_metagenome_bp += len(seq)
