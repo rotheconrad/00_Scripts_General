@@ -1,16 +1,22 @@
 #!/usr/bin/env python
 
-''' Converts fastq file to a fasta file.              
+''' Renames sequences in a fastq file
 
-Contains read_fastq function whcih can be loaded as a module
-into other scripts to return a fastq file as read, seq, qal
-objects.
+Magic Blast cuts the read name at the first space character and
+reports the name before the space as the query ID.
 
-Only works for short read fastq files where each sequence and
-quality entry is on a single line.
+However, Fastq files can be named as:
+    @D00468:261:HYTMHBCX2:1:1101:9119:31637 1:N:0:CAGAGAGG+ACTGCATA
+    @D00468:261:HYTMHBCX2:1:1101:9119:31637 2:N:0:CAGAGAGG+ACTGCATA
+where the unique identifier can come after the space chacter.
 
-Does not work with longer read fastq files where sequence
-and quality lines may wrap to multiple lines per entry.
+Filtering for best hits and retrieving the fasta sequence of a magic
+blast match becomes impossible once the unique identifier is lost.
+
+This script renames the fastq sequences with a simple name:
+@Read_0000000000001
+@Read_0000000000002
+etc...
 
 -------------------------------------------
 Author :: Roth Conrad
@@ -23,7 +29,7 @@ All rights reserved
 -------------------------------------------
 '''
 
-import argparse
+import argparse, subprocess
 
 def read_fastq(fq):
     linecount = 0
@@ -34,7 +40,7 @@ def read_fastq(fq):
         blank = fq.readline().rstrip()
         qal = fq.readline().rstrip()
         linecount += 4
-        if linecount % 4 == 0: yield (name, seq, qal)
+        if linecount % 4 == 0: yield (name, seq, blank, qal)
 
 def main():
         # Configure Argument Parser
@@ -51,12 +57,17 @@ def main():
         )
     args=vars(parser.parse_args())
 
-    outfile = args['fastq_input_file'].split('.')[0] + '.fasta'
+    infile = args['fastq_input_file']
+    outfile = args['fastq_input_file'].split('.')[0] + '.temp'
+    readcount = 0
 
-    with open(args['fastq_input_file'], 'r') as f, open (outfile, 'w') as o:
+    with open(infile, 'r') as f, open (outfile, 'w') as o:
 
-        for name, seq, qal in read_fastq(f):
-            o.write(f'>{name}\n{seq}\n')
+        for name, seq, blank, qal in read_fastq(f):
+            readcount += 1
+            o.write(f'@Read_{readcount:013}\n{seq}\n{blank}\n{qal}\n')
+
+    _ = subprocess.run(['mv', outfile, infile])
 
 if __name__ == "__main__":
     main()
