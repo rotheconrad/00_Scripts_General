@@ -37,7 +37,7 @@ This tool takes the following input parameters:
 This script returns the following files:
 
     * 2 column tsv output of Contig(or gene_name) \t coverage(or ANIr)
-    * Writes 8 files total:
+    * Writes 11 files total:
         - {out_file_prefix}_genome_by_bp.tsv
         - {out_file_prefix}_genome.tsv
         - {out_file_prefix}_contig_tad.tsv
@@ -46,6 +46,12 @@ This script returns the following files:
         - {out_file_prefix}_gene_tad.tsv
         - {out_file_prefix}_gene_breadth.tsv
         - {out_file_prefix}_gene_ani.tsv
+        - {out_file_prefix}_intergene_tad.tsv
+        - {out_file_prefix}_intergene_breadth.tsv
+        - {out_file_prefix}_intergene_ani.tsv
+
+*_gene_* files contain values for the CDS regions.
+*_intergene_* files contain values for the inter-CDS regions.
 
 This script requires the following packages:
 
@@ -155,7 +161,13 @@ def retrieve_gene_coverage(pgf, rgf_tad, rgf_ani):
     gn_ani = defaultdict(list)
     gn_len = {}
 
+    intergn_tad = defaultdict(list) # initialize dictionary
+    intergn_ani = defaultdict(list)
+    intergn_len = {}
+    intergn_count = 1
+
     with open(pgf, 'r') as f:
+        stp = 1
         for name, seq in read_fasta(f):
             contig_name = '_'.join(name.split('|')[1].split('_')[:2])
             protein = name.split('protein=')[1].split(']')[0]
@@ -199,18 +211,31 @@ def retrieve_gene_coverage(pgf, rgf_tad, rgf_ani):
                 print(location)
                 sys.exit()
 
-            strt = min(p1, p2)
-            stp = max(p1, p2)
+            strt = min(p1, p2) # start of CDS region
+            intergene_strt = stp # start of inter-CDS region
+            intergene_stp = strt # stop of inter-CDS region
+            intergene_len = intergene_stp - intergene_strt + 1
+            intergene_name = f'intergene_{intergn_count:06}'
+            intergn_count += 1
+            stp = max(p1, p2) # stop of CDS region
 
             gene_name = f'{contig_name}:{locus_tag}:{protein_id}:{protein}'
 
             gn_len[gene_name] = len(seq)
+            intergn_len[intergene_name] = intergene_len
 
+            # Get depth values for gene (CDS) regions
             for i in range(strt, stp+1, 1):
                 gn_tad[gene_name].append(rgf_tad[contig_name][i])
                 gn_ani[gene_name].extend(rgf_ani[contig_name][i])
 
-    return gn_tad, gn_ani, gn_len
+            # Get depth values for intergene (inter-CDS) regions
+            for i in range(intergene_strt, intergene_stp+1, 1):
+                intergn_tad[intergene_name].append(rgf_tad[contig_name][i])
+                intergn_ani[intergene_name].extend(rgf_ani[contig_name][i])
+
+
+    return gn_tad, gn_ani, gn_len, intergn_tad, intergn_ani, intergn_len
 
 
 def truncate(x, tad):
@@ -357,6 +382,9 @@ def calc_tad_anir_relabndc(
                             gn_tad,
                             gn_ani,
                             gn_len,
+                            intergn_tad,
+                            intergn_ani,
+                            intergn_len,
                             tad,
                             outpre,
                             precision
@@ -369,6 +397,9 @@ def calc_tad_anir_relabndc(
 
     print('... Calculating TADs for Genes')
     gene_tad, gene_breadth = get_gene_tad(gn_tad, tad)
+
+    print('... Calculating TADs for Inter-Gene Regions')
+    intergene_tad, intergene_breadth = get_gene_tad(intergn_tad, tad)
 
     print('... Calculating TAD for Genome')
     wgbreadth = sum(i > 0 for i in wg_tad) / len(wg_tad)
@@ -383,6 +414,9 @@ def calc_tad_anir_relabndc(
     print('... Calculating ANI for Genes')
     gene_ani = get_gene_anir(gn_ani, tad)
 
+    print('... Calculating ANI for Inter-Gene Regions')
+    intergene_ani = get_gene_anir(intergn_ani, tad)
+
     print('... Calculating ANI for Genome')
     wgani = get_average(wg_ani, tad)
 
@@ -394,6 +428,16 @@ def calc_tad_anir_relabndc(
     _ = write_file(gene_tad, gn_len, outpre, '_gene_tad.tsv', precision)
     _ = write_file(gene_breadth, gn_len, outpre, '_gene_breadth.tsv', precision)
     _ = write_file(gene_ani, gn_len, outpre, '_gene_ani.tsv', precision)
+    _ = write_file(
+        intergene_tad, intergn_len, outpre, '_inter-gene_tad.tsv', precision
+        )
+    _ = write_file(
+        intergene_breadth, intergn_len, outpre,
+        '_inter-gene_breadth.tsv', precision
+        )
+    _ = write_file(
+        intergene_ani, intergn_len, outpre, '_inter-gene_ani.tsv', precision
+        )
 
     return wgtad, wgbreadth, wgani, relabndc, total_metagenome_bp
 
@@ -419,7 +463,14 @@ def operator(mtg, rgf, tbf, pgf, thd, tad, outpre):
     _ = write_genome_cov_by_bp(rgf_tad, outpre)
 
     print('Retrieving coverage for each contig & gene')
-    gn_tad, gn_ani, gn_len = retrieve_gene_coverage(pgf, rgf_tad, rgf_ani)
+    (
+        gn_tad,
+        gn_ani,
+        gn_len,
+        intergn_tad,
+        intergn_ani,
+        intergn_len
+            ) = retrieve_gene_coverage(pgf, rgf_tad, rgf_ani)
 
     print(f'Calculating {tad}% truncated average depth and {thd}% ANIr')
     (
@@ -437,6 +488,9 @@ def operator(mtg, rgf, tbf, pgf, thd, tad, outpre):
                                         gn_tad,
                                         gn_ani,
                                         gn_len,
+                                        intergn_tad,
+                                        intergn_ani,
+                                        intergn_len,
                                         tadp,
                                         outpre,
                                         precision
