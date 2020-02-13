@@ -2,24 +2,37 @@
 
 '''Calculates Coverage Per Contig and Gene from MagicBlast Tabular Output.
 
-Coverage is calculated as Truncated Average Depth (TAD).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Magic Blast output should be filtered prior to using this script   !!
+!! Use MagicBlast01_ShortRead_Filter.py or other method.              !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Coverage calculated as Truncated Average Depth (TAD):
     * Set TAD to 100 for no truncatation.
     * TAD 80 removes the top 10% and bottom 10% of base pair depths and
       caluclates coverage from the middle 80% of values. Intended to 
       reduce effects of conserved motif peaks and contig edge valleys.
     * Coverage = base pairs recruited / length of genome, contig, or gene
 
-Relative Abundance is calculate as:
+Coverage calculated as Breadth:
+    * number of positions in reference sequence covered by at least
+      one read alignment divided the length of the reference sequence.
+
+Relative Abundance is calculated as:
     * base pairs recruited / base pairs in metagenome * 100
     * It is the percent of base pairs recruited out of the total
       base pairs sequenced in the metagenome.
 
+ANIr is calculated as:
+    * average percent identity of sequence alignments for all reads 
+      (should be 1 blast match per read)
+
 This tool takes the following input parameters:
 
     * Tabular Blast file containing results for 1 genome and 1 metagenome
-    * Genome fasta file used as reference for blast search.
-    * Metagenome fastq file used as queries for blast search.
-    * Prodigal fasta file of predicted genes for reference genome fasta.
+    * *_genomic.fna file from NCBI used as reference for blast search.
+    * Metagenome fastq (or fasta) file used as queries for blast search.
+    * *_CDS_from_genomic.fna file of predicted genes for *_genomic.fna.
 
 This script returns the following files:
 
@@ -28,11 +41,11 @@ This script returns the following files:
         - {out_file_prefix}_genome_by_bp.tsv
         - {out_file_prefix}_genome.tsv
         - {out_file_prefix}_contig_tad.tsv
-        - {out_file_prefix}_contig_ani.tsv
         - {out_file_prefix}_contig_breadth.tsv
+        - {out_file_prefix}_contig_ani.tsv
         - {out_file_prefix}_gene_tad.tsv
-        - {out_file_prefix}_gene_ani.tsv
         - {out_file_prefix}_gene_breadth.tsv
+        - {out_file_prefix}_gene_ani.tsv
 
 This script requires the following packages:
 
@@ -44,9 +57,9 @@ This script requires the following packages:
 Author :: Roth Conrad
 Email :: rotheconrad@gatech.edu
 GitHub :: https://github.com/rotheconrad
-Date Created :: Wednesday, August 14th, 2019
+Date Created :: February 12th, 2020
 License :: GNU GPLv3
-Copyright 2019 Roth Conrad
+Copyright 2020 Roth Conrad
 All rights reserved
 -------------------------------------------
 '''
@@ -438,7 +451,7 @@ def main():
         required=True
         )
     parser.add_argument(
-        '-p', '--prodigal_gene_fasta_file',
+        '-g', '--CDS_from_genomic_file',
         help='Please specify the prodigal gene fasta file!',
         metavar='',
         type=str,
@@ -473,7 +486,7 @@ def main():
             args['metagenome_file'],
             args['ref_genome_file'],
             args['tabular_blast_file'],
-            args['prodigal_gene_fasta_file'],
+            args['CDS_from_genomic_file'],
             args['pIdent_threshold_cutoff'],
             args['truncated_avg_depth_value'],
             args['out_file_prefix']

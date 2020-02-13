@@ -2,34 +2,49 @@
 
 '''Calculates Coverage Per Contig and Gene from MagicBlast Tabular Output.
 
-Coverage is calculated as Truncated Average Depth (TAD).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Magic Blast output should be filtered prior to using this script   !!
+!! Use MagicBlast01_ShortRead_Filter.py or other method.              !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Coverage calculated as Truncated Average Depth (TAD):
     * Set TAD to 100 for no truncatation.
     * TAD 80 removes the top 10% and bottom 10% of base pair depths and
       caluclates coverage from the middle 80% of values. Intended to 
       reduce effects of conserved motif peaks and contig edge valleys.
     * Coverage = base pairs recruited / length of genome, contig, or gene
 
-Relative Abundance is calculate as:
+Coverage calculated as Breadth:
+    * number of positions in reference sequence covered by at least
+      one read alignment divided the length of the reference sequence.
+
+Relative Abundance is calculated as:
     * base pairs recruited / base pairs in metagenome * 100
     * It is the percent of base pairs recruited out of the total
       base pairs sequenced in the metagenome.
+
+ANIr is calculated as:
+    * average percent identity of sequence alignments for all reads 
+      (should be 1 blast match per read)
 
 This tool takes the following input parameters:
 
     * Tabular Blast file containing results for 1 genome and 1 metagenome
     * Genome fasta file used as reference for blast search.
-    * Metagenome fastq file used as queries for blast search.
+    * Metagenome fastq (or fasta) file used as queries for blast search.
     * Prodigal fasta file of predicted genes for reference genome fasta.
 
 This script returns the following files:
 
     * 2 column tsv output of Contig(or gene_name) \t coverage(or ANIr)
-    * Writes 6 files total:
+    * Writes 8 files total:
         - {out_file_prefix}_genome_by_bp.tsv
         - {out_file_prefix}_genome.tsv
         - {out_file_prefix}_contig_tad.tsv
+        - {out_file_prefix}_contig_breadth.tsv
         - {out_file_prefix}_contig_ani.tsv
         - {out_file_prefix}_gene_tad.tsv
+        - {out_file_prefix}_gene_breadth.tsv
         - {out_file_prefix}_gene_ani.tsv
 
 This script requires the following packages:
@@ -177,26 +192,32 @@ def get_contig_tad(rgf_tad, tad):
     """ reads through rgf_tad and returns dict of tads by contig """
 
     contig_tad = {}
+    contig_breadth = {}
     wg_tad = []
 
     for k, v in rgf_tad.items():
         values = list(v.values())
+        breadth = sum(i > 0 for i in values) / len(values)
+        contig_breadth[k] = breadth
         coverage = get_average(values, tad)
         contig_tad[k] = coverage
         wg_tad.extend(values)
 
-    return contig_tad, wg_tad
+    return contig_tad, contig_breadth, wg_tad
 
 
 def get_gene_tad(gn_tad, tad):
     """ reads through gn_tad and returns dict of tads by gene """
 
     gene_tad = {}
+    gene_breadth = {}
 
     for k, v in gn_tad.items():
+        breadth = sum(i > 0 for i in v) / len(v)
+        gene_breadth[k] = breadth
         gene_tad[k] = get_average(v, tad)
 
-    return gene_tad
+    return gene_tad, gene_breadth
     
 
 def get_contig_anir(rgf_ani, tad):
@@ -303,12 +324,13 @@ def calc_tad_anir_relabndc(
     """ Calculate tad and anir for whole genome, contig, and gene """
 
     print('... Calculating TADs for Contigs')
-    contig_tad, wg_tad = get_contig_tad(rgf_tad, tad)
+    contig_tad, contig_breadth, wg_tad = get_contig_tad(rgf_tad, tad)
 
     print('... Calculating TADs for Genes')
-    gene_tad = get_gene_tad(gn_tad, tad)
+    gene_tad, gene_breadth = get_gene_tad(gn_tad, tad)
 
     print('... Calculating TAD for Genome')
+    wgbreadth = sum(i > 0 for i in wg_tad) / len(wg_tad)
     wgtad = get_average(wg_tad, tad)
 
     print('... Calculating Total Metagenome Size & Relative Abundance')
@@ -324,11 +346,15 @@ def calc_tad_anir_relabndc(
     wgani = get_average(wg_ani, tad)
 
     _ = write_file(contig_tad, rgf_len, outpre, '_contig_tad.tsv', precision)
+    _ = write_file(
+        contig_breadth, rgf_len, outpre, '_contig_breadth.tsv', precision
+        )
     _ = write_file(contig_ani, rgf_len, outpre, '_contig_ani.tsv', precision)
     _ = write_file(gene_tad, gn_len, outpre, '_gene_tad.tsv', precision)
+    _ = write_file(gene_breadth, gn_len, outpre, '_gene_breadth.tsv', precision)
     _ = write_file(gene_ani, gn_len, outpre, '_gene_ani.tsv', precision)
 
-    return wgtad, wgani, relabndc, total_metagenome_bp
+    return wgtad, wgbreadth, wgani, relabndc, total_metagenome_bp
 
 
 def operator(mtg, rgf, tbf, pgf, thd, tad, outpre):
@@ -357,6 +383,7 @@ def operator(mtg, rgf, tbf, pgf, thd, tad, outpre):
     print(f'Calculating {tad}% truncated average depth and {thd}% ANIr')
     (
         wgtad,
+        wgbreadth,
         wgani,
         relabndc,
         total_metagenome_bp
@@ -374,27 +401,25 @@ def operator(mtg, rgf, tbf, pgf, thd, tad, outpre):
                                         precision
                                         )
 
-    with open(f'{outpre}_genome.tsv', 'w') as o:
-        o.write(
-            f'Genome_Name\tTAD_{int(tad)}\tANIr_{int(thd)}\t'
+    wg_header = (
+            f'Genome_Name\tTAD_{int(tad)}\tBreadth\tANIr_{int(thd)}\t'
             f'Relative_Abundance(%)\tGenome_Length(bp)\tMetagenome_Length(bp)\n'
             )
-        o.write(
-            f'{outpre}\t{wgtad:.{precision}f}\t{wgani:.{precision}f}%\t'
+    wg_lineout = (
+            f'{outpre}\t{wgtad:.{precision}f}\t{wgbreadth:.{precision}f}\t'
+            f'{wgani:.{precision}f}%\t'
             f'{relabndc:.{precision}f}%\t{wglen}\t{total_metagenome_bp}\n'
             )
+
+    with open(f'{outpre}_genome.tsv', 'w') as o:
+        o.write(wg_header)
+        o.write(wg_lineout)
 
     print('\nScript seems to have finished successfully.\n')
 
     print('\nWhole Genome Values:\n')
-    print(
-        f'Genome_Name\tTAD_{int(tad)}\tANIr_{int(thd)}\t'
-        f'Relative_Abundance(%)\tGenome_Length\tMetagenome_Length(bp)'
-        )
-    print(
-        f"{outpre}\t{wgtad:.{precision}f}\t{wgani:.{precision}f}%\t"
-        f"{relabndc:.{precision}f}%\t{wglen}\t{total_metagenome_bp}\n\n"
-        )
+    print(wg_header[:-1])
+    print(wg_lineout[:-1])
 
 
 def main():

@@ -2,7 +2,21 @@
 
 '''Filter MagicBlast Tabular Output for best hit and match length.
 
-This script filters tabular magicblast output for best hit based on
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Check read names in fastq or fasta file before running Magic Blast !!
+!! Make certain there is no white space separating the unique part of !!
+!! the read names. Rename your reads if neccessary before Magic Blast !!
+!! You can try Fastq_rename_sequences.py or Fasta_rename_sequences.py !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Run makeblastdb with the -parse_seqids flag and run magic blast    !!
+!! with the -parse_deflines flag set to T.                            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! It is recommended to randomly shuffle the Magic Blast results      !!
+!! before running this filter to randomize the selection of ties      !!
+!! between alignment scores. Use bash command shuf or other method.   !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+This script filters tabular Magic Blast output for best hit based on
 the alignment score, as well as a user defined percent match length,
 and read length. Percent match length = alignment length / read length.
 
