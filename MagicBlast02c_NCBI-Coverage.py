@@ -6,6 +6,11 @@
 !! Magic Blast output should be filtered prior to using this script   !!
 !! Use MagicBlast01_ShortRead_Filter.py or other method.              !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This script calculates Gene coverage based on CDS positional       !!
+!! information as well as inter-gene or between CDS regions. This     !!
+!! script assumes the CDS file to be ordered by genome position.      !!
+!! The *_CDS_from_genomic.fna files from NCBI are usually in order.   !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 Coverage calculated as Truncated Average Depth (TAD):
     * Set TAD to 100 for no truncatation.
