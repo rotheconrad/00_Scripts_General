@@ -2,6 +2,14 @@
 
 '''Generate Whole Genome Summary Table Across Metagenome Samples.
 
+This script normalizes the TAD80 by the metagenome size in
+Giga-Base-Pairs so TAD80 is comparable across metagenomes. This means the
+TAD80 reported by this script is calculated as:
+
+        TAD80 / length of metagenome (Gbps) making the units 1/Gbps
+
+ANIrs and Relative Abundance should be comparable without normalization.
+
 This tool takes the following input parameters:
 
     * input dir - containing *_genome.tsv files
@@ -41,33 +49,60 @@ def gather_data(gtd, outfile):
     file_list = [f for f in listdir(gtd) if isfile(join(gtd, f))]
 
     tads = defaultdict(lambda: defaultdict(list))
+    anirs = defaultdict(lambda: defaultdict(list))
     rels = defaultdict(lambda: defaultdict(list))
     sample_dict = {}
 
     for file in file_list:
-        with open(f'{gtd}{file}', 'r') as f:
+        with open(f'{gtd}/{file}', 'r') as f:
             header = f.readline()
             X = f.readline().rstrip().split('\t')
 
+            #############################################################
+            ####### ADJUST THIS BLOCK FOR YOUR FILE NAMING SCHEME #######
+            #############################################################
             file_basename = X[0].split('/')[-1].split('_')
             smpl = '_'.join(file_basename[:2])
             sample_dict[smpl] = ''
             genome = file_basename[2]
+            #############################################################
+            #############################################################
 
             tad = X[1]
             anir = X[2][:-1]
             relabnd = X[3][:-1]
+            metag_size = X[5]
 
-            tads[genome][smpl] = tad
+            tads[genome][smpl] = str(float(tad) / int(metag_size) * 1000000000)
+            anirs[genome][smpl] = anir
             rels[genome][smpl] = relabnd
 
-    with open(outfile, 'w') as o:
 
-        sample_list = list(sample_dict.keys())
-        header = 'Genome\t' + '\t'.join(sample_list) + '\n'
+    sample_list = list(sample_dict.keys())
+    header = 'Genome\t' + '\t'.join(sample_list) + '\n'
+
+    with open(f'{outfile}_tads.tsv', 'w') as o:
+
         o.write(header)
-
         for genome, samples in tads.items():
+            lineout = [genome]
+
+            for s in sample_list: lineout.append(samples[s])
+            o.write('\t'.join(lineout) + '\n')
+
+    with open(f'{outfile}_anirs.tsv', 'w') as o:
+
+        o.write(header)
+        for genome, samples in anirs.items():
+            lineout = [genome]
+
+            for s in sample_list: lineout.append(samples[s])
+            o.write('\t'.join(lineout) + '\n')
+
+    with open(f'{outfile}_rels.tsv', 'w') as o:
+
+        o.write(header)
+        for genome, samples in rels.items():
             lineout = [genome]
 
             for s in sample_list: lineout.append(samples[s])
@@ -89,8 +124,8 @@ def main():
         required=True
         )
     parser.add_argument(
-        '-out', '--output_file',
-        help='Please specify the name to us for the output .tsv file',
+        '-out', '--output_file_prefix',
+        help='Please specify the name to us for the output file prefix.',
         metavar='',
         type=str,
         required=True
@@ -99,9 +134,14 @@ def main():
 
     # Run this scripts main function
     print('\n\nParsing data into summary table ...\n\n')
+
+    fdir = args['genome_tsv_dir']
+
+    if fdir[-1] == '/': fdir = fdir[:-1]
+
     gather_data(
-        args['genome_tsv_dir'],
-        args['output_file']
+        fdir,
+        args['output_file_prefix']
         )
 
 if __name__ == "__main__":

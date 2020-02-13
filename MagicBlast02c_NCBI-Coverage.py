@@ -157,11 +157,52 @@ def retrieve_gene_coverage(pgf, rgf_tad, rgf_ani):
 
     with open(pgf, 'r') as f:
         for name, seq in read_fasta(f):
-            X = name.split(' # ')
-            gene_name = X[0][1:]
-            contig_name = '_'.join(gene_name.split('_')[:-1])
-            strt = min(int(X[1]), int(X[2]))
-            stp = max(int(X[1]), int(X[2]))
+            contig_name = '_'.join(name.split('|')[1].split('_')[:2])
+            protein = name.split('protein=')[1].split(']')[0]
+            try: protein_id = name.split('protein_id=')[1].split(']')[0]
+            except: protein_id = 'pseudo-gene'
+            locus_tag = name.split('locus_tag=')[1].split(']')[0]
+            location = name.split('location=')[1].split(']')[0].split('(')
+            if len(location) == 1:
+                X = location[0].split('..')
+                p1 = int(''.join(i for i in X[0] if i.isdigit()))
+                p2 = int(''.join(i for i in X[1] if i.isdigit()))
+
+            elif len(location) == 2:
+                X = location[1].split('..')
+                if len(X) == 2:
+                    p1 = int(''.join(i for i in X[0] if i.isdigit()))
+                    p2 = int(''.join(i for i in X[1] if i.isdigit()))
+                elif len(X) == 3:
+                    p1 = int(''.join(i for i in X[0] if i.isdigit()))
+                    p2 = int(''.join(i for i in X[2] if i.isdigit()))
+                else:
+                    print('Gene location error 1 for entry:')
+                    print(name)
+                    print(X)
+                    sys.exit()
+
+            elif len(location) == 3:
+                X = location[2].split('..')
+                if len(X) == 3:
+                    p1 = int(''.join(i for i in X[0] if i.isdigit()))
+                    p2 = int(''.join(i for i in X[2] if i.isdigit()))
+                else:
+                    print('Gene location error 2 for entry:')
+                    print(name)
+                    print(X)
+                    sys.exit()
+
+            else:
+                print('Gene location error 3 for entry:')
+                print(name)
+                print(location)
+                sys.exit()
+
+            strt = min(p1, p2)
+            stp = max(p1, p2)
+
+            gene_name = f'{contig_name}:{locus_tag}:{protein_id}:{protein}'
 
             gn_len[gene_name] = len(seq)
 
@@ -451,7 +492,7 @@ def main():
         required=True
         )
     parser.add_argument(
-        '-g', '--CDS_from_genomic_file',
+        '-p', '--CDS_from_genomic_file',
         help='Please specify the prodigal gene fasta file!',
         metavar='',
         type=str,
