@@ -158,6 +158,46 @@ def write_genome_cov_by_bp(rgf_tad, outpre):
                 o.write(f'{counter}\t{i}\n')
                 counter += 1
 
+def get_strt_stp(location):
+    """ Sorts out the NCBI CDS from genomic location nonsense """
+    
+    if len(location) == 1:
+        X = location[0].split('..')
+        p1 = int(''.join(i for i in X[0] if i.isdigit()))
+        p2 = int(''.join(i for i in X[1] if i.isdigit()))
+
+    elif len(location) == 2:
+        X = location[1].split('..')
+        if len(X) == 2:
+            p1 = int(''.join(i for i in X[0] if i.isdigit()))
+            p2 = int(''.join(i for i in X[1] if i.isdigit()))
+        elif len(X) == 3:
+            p1 = int(''.join(i for i in X[0] if i.isdigit()))
+            p2 = int(''.join(i for i in X[2] if i.isdigit()))
+        else:
+            print('Gene location error 1 for entry:')
+            print(name)
+            print(X)
+            sys.exit()
+
+    elif len(location) == 3:
+        X = location[2].split('..')
+        if len(X) == 3:
+            p1 = int(''.join(i for i in X[0] if i.isdigit()))
+            p2 = int(''.join(i for i in X[2] if i.isdigit()))
+        else:
+            print('Gene location error 2 for entry:')
+            print(name)
+            print(X)
+            sys.exit()
+
+    else:
+        print('Gene location error 3 for entry:')
+        print(name)
+        print(location)
+        sys.exit()
+
+    return p1, p2
 
 def retrieve_gene_coverage(pgf, rgf_tad, rgf_ani):
     """ Retrieves list of depths for each bp position of gene length """
@@ -180,48 +220,18 @@ def retrieve_gene_coverage(pgf, rgf_tad, rgf_ani):
             except: protein_id = 'pseudo-gene'
             locus_tag = name.split('locus_tag=')[1].split(']')[0]
             location = name.split('location=')[1].split(']')[0].split('(')
-            if len(location) == 1:
-                X = location[0].split('..')
-                p1 = int(''.join(i for i in X[0] if i.isdigit()))
-                p2 = int(''.join(i for i in X[1] if i.isdigit()))
 
-            elif len(location) == 2:
-                X = location[1].split('..')
-                if len(X) == 2:
-                    p1 = int(''.join(i for i in X[0] if i.isdigit()))
-                    p2 = int(''.join(i for i in X[1] if i.isdigit()))
-                elif len(X) == 3:
-                    p1 = int(''.join(i for i in X[0] if i.isdigit()))
-                    p2 = int(''.join(i for i in X[2] if i.isdigit()))
-                else:
-                    print('Gene location error 1 for entry:')
-                    print(name)
-                    print(X)
-                    sys.exit()
-
-            elif len(location) == 3:
-                X = location[2].split('..')
-                if len(X) == 3:
-                    p1 = int(''.join(i for i in X[0] if i.isdigit()))
-                    p2 = int(''.join(i for i in X[2] if i.isdigit()))
-                else:
-                    print('Gene location error 2 for entry:')
-                    print(name)
-                    print(X)
-                    sys.exit()
-
-            else:
-                print('Gene location error 3 for entry:')
-                print(name)
-                print(location)
-                sys.exit()
+            p1, p2 = get_strt_stp(location)
 
             strt = min(p1, p2) # start of CDS region
+
+            # Define intergenic or between CDS regions
             intergene_strt = stp # start of inter-CDS region
             intergene_stp = strt # stop of inter-CDS region
             intergene_len = intergene_stp - intergene_strt + 1
             intergene_name = f'intergene_{intergn_count:06}'
             intergn_count += 1
+
             stp = max(p1, p2) # stop of CDS region
 
             gene_name = f'{contig_name}:{locus_tag}:{protein_id}:{protein}'
