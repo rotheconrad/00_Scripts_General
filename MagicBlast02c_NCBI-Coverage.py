@@ -158,9 +158,10 @@ def write_genome_cov_by_bp(rgf_tad, outpre):
                 o.write(f'{counter}\t{i}\n')
                 counter += 1
 
+
 def get_strt_stp(location):
     """ Sorts out the NCBI CDS from genomic location nonsense """
-    
+
     if len(location) == 1:
         X = location[0].split('..')
         p1 = int(''.join(i for i in X[0] if i.isdigit()))
@@ -198,6 +199,7 @@ def get_strt_stp(location):
         sys.exit()
 
     return p1, p2
+
 
 def retrieve_gene_coverage(pgf, rgf_tad, rgf_ani):
     """ Retrieves list of depths for each bp position of gene length """
