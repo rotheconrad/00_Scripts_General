@@ -437,6 +437,7 @@ def calc_tad_anir_relabndc(
     print('... Calculating ANI for Genome')
     wgani = get_average(wg_ani, tad)
 
+    print('\nWriting output files ...')
     _ = write_file(contig_tad, rgf_len, outpre, '_contig_tad.tsv', precision)
     _ = write_file(
         contig_breadth, rgf_len, outpre, '_contig_breadth.tsv', precision
