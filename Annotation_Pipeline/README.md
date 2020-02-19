@@ -11,7 +11,7 @@ page](https://www.genome.jp/tools/kofamkoala/).
 The publication is [here](https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btz859/5631907).
 
 
-Kofamscan can be easily installed using a [conda environment](https://docs.conda.io/en/latest/miniconda.html):
+Or Kofamscan can be easily installed using a [conda environment](https://docs.conda.io/en/latest/miniconda.html):
 
 ```bash
 conda create -n kofamscan hmmer parallel
@@ -19,9 +19,9 @@ conda activate kofamscan
 conda install -c conda-forge ruby
 ```
 
-Details of Blast+ can be found [here](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download).
+Installation Details for Blast+ can be found [here](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download).
 
-Blast+ can be easily installed using a [conda environment](https://docs.conda.io/en/latest/miniconda.html):
+Or Blast+ can be easily installed using a [conda environment](https://docs.conda.io/en/latest/miniconda.html):
 
 ```bash
 conda create -n blastplus
@@ -66,7 +66,7 @@ blastp -task 'blastp' -evalue 0.01 -max_target_seqs 10 -num_threads 2 -db {patht
 Kofamscan can be run with default settings like this:
 
 ```bash
-ruby -o {outfile_name} {input_fasta}
+ruby exec_annotation -o {outfile_name} {input_fasta}
 ```
 
 ## Step 03: Filter Results and retrieve annotation information.
@@ -89,7 +89,7 @@ python 02_KofamScan_Filter_Convert.py -i {Kofamscan_output_file} -o {outfile_nam
 
 At this point you have files containing results for each database in tab separated values (tsv) format.
 
-## Step 04: Combine results and add unanated genes.
+## Step 04: Combine results and add unannotated genes.
 
 This step is optional. It will combine the tsv files from step 03 and also add to the file any genes that did not recieve an annotation above the thresholds as "Hypothetical Genes".
 
@@ -106,9 +106,27 @@ Transform the annotation files.
 python 05a_Transform_Annotation_Results.py -a {Combined_Annotations_with_NoMatch} -o {outfile_name}
 ```
 
-Create a list of gene types to count. The plot generating script below reads a list of gene names and performs a string match
+Create a list of gene types to count with columns Legend Name and String to Match separated by a comma and a space. The file should include the column names. The plot generating script below reads the list of gene types and performs a string match. Matches are not case sensitive. Use "|" for or to count multiple variations as one type. Each gene is counted only once. Gene will be counted in the first category on the list that it matches.
+
+Example Gene_Types_Lists.txt
+
+    Legend Name, String to Match
+    Hypothetical, hypothetical
+    Uncharacterized, uncharacterized
+    Transcription, transcriptional|transcription|transcriptase
+    Translation, translation
+    Repair, repair
+    Nuclease, nuclease
+    Transferase, transferase
+    Transposase, transposase
+    Synthase, synthase
+    Integrase, integrase
+    Transport, transport
+    Reductase, reductase
+
 
 Build the stacked bar plots.
+
 ```bash
 python 05b_Compare_Annotation_Results.py -i {transformed_annotations} -l Gene_Types_List.txt -o {outfile_name}
 ```

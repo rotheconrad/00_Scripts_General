@@ -25,35 +25,25 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 
-def get_summaries(f1, f2, out):
+def get_summaries(infile, list, out):
     """ Read input table and generate counts """
 
     data = defaultdict(list)
 
-    s1 = f1.split('_')[1]
-    s2 = f2.split('_')[1]
-    df1 = pd.read_csv(f1, sep='\t', index_col=0)
-    df2 = pd.read_csv(f2, sep='\t', index_col=0)
+    df = pd.read_csv(f1, sep='\t', index_col=0)
 
-    db = ['KEGG', 'TrEMBL', 'SwissProt']
+    dbs = ['KEGG', 'TrEMBL', 'SwissProt']
+    gene_legend = []
+    gene_match = []
 
     # gn is also the row names or index
     # This is a list of key words to look for in the gene annotations
-    gn = [
-        'hypothetical', 'uncharacterized', 'transferase', 'transposase',
-        'synthase', 'integrase', 'transport', 'recombination', 'synthesis',
-        'transcriptase', 'transcription', 'reductase', 'kinase', 'regulator',
-        'repair', 'inner membrane', 'outer membrane', 'membrane', 'replication',
-        'synthetase', 'recombinase', 'helicase', 'endonuclease', 'ribonuclease',
-        'nuclease', 'isomerase', 'secretion', 'chaperone', 'export', 'capsid',
-        'hydroxylase', 'interferase', 'CRISPR', 'ribosomal', 'ribosome',
-        'phosphatase', 'dehydrogenase', 'hydrogenase', 'lipoprotein',
-        'protease', 'phosphodiesterase', 'rhodopsin', 'ATP-binding',
-        'GTP-binding', 'DNA-binding', 'plasmid', 'phage', 'cytoplasmic',
-        'phosphorylase', 'monooxygenase', 'polymerase', 'esterase', 'epimerase',
-        'desulfurase','hydrolase', 'antiporter', 'heat shock|hsp',
-        'dehydratase', 'transaldolase', 'peptidase', 'oxidase'
-        ]
+    with open(list) as f:
+        header = f.readline()
+        for l in f:
+            X = l.rstrip().split(', ')
+            gene_legend.append(X[0])
+            gene_match.append(X[1])
 
     # This is the 3 databases x the 2 organisms
     colnames = [
@@ -177,15 +167,15 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter
         )
     parser.add_argument(
-        '-f1', '--annotation_file_1',
-        help='The 1st 04_*_Transformed_Annotations.tsv file.',
+        '-i', '--transformed_annotation_file',
+        help='The Transformed Annotation  file from previous step.',
         metavar='',
         type=str,
         #required=True
         )
     parser.add_argument(
-        '-f2', '--annotation_file_2',
-        help='The 2nd 04_*_Transformed_Annotations.tsv file.',
+        '-l', '--gene_types_list',
+        help='List of gene types to string match.',
         metavar='',
         type=str,
         #required=True
@@ -203,8 +193,8 @@ def main():
     print('Running Script...')
 
     df = get_summaries(
-                args['annotation_file_1'],
-                args['annotation_file_2'],
+                args['transformed_annotation_file'],
+                args['gene_types_list'],
                 args['out_file']
                 )
 
