@@ -128,7 +128,7 @@ Example Gene_Types_Lists.txt
 Build the stacked bar plots.
 
 ```bash
-python 05b_Compare_Annotation_Results.py -i {transformed_annotations} -l Gene_Types_List.txt -o {outfile_name}
+python 05b_Compare_Annotation_Results.py -i {transformed_annotations} -l Gene_Types_List.txt -c {num_legend_columns} -o {outfile_name}
 ```
 
 Example plot:
