@@ -51,8 +51,8 @@ makeblastdb -dbtype prot -in uniprot_trembl.fasta
 I wrote some python code to parse these database .dat files for use downstream (Parsing the TrEMBL.dat file can take 3-4 hours).
 
 ```bash
-python ../Scripts/Parse_UniProtDBs_datFile.py -i uniprot_sprot.dat -o uniprot_sprot.PARSED.dat.tsv
-python ../Scripts/Parse_UniProtDBs_datFile.py -i uniprot_trembl.dat -o  uniprot_trembl.PARSED.dat.tsv
+python 01a_Parse_UniProtDBs_datFile.py -i uniprot_sprot.dat -o uniprot_sprot.PARSED.dat.tsv
+python 01a_Parse_UniProtDBs_datFile.py -i uniprot_trembl.dat -o  uniprot_trembl.PARSED.dat.tsv
 ```
 
 ## Step 02: Run Blastp or Kofamscan as desired.
@@ -76,15 +76,15 @@ There are various ways to filter results and many ideas on which cut offs to use
 For blastp using either TrEMBL or UniProt databases:
 
 ```bash
-python 01_BlastTab_BestHit_Filter.py -i {tabular_blastp_output} -pml 50 -pid 40
-python 02_BlastTab_UniProtID_to_Gene_Annotation.py -p uniprot_sprot.PARSED.dat.tsv -b {filtered_blastp_output} -o {outfile_name}
-python 02_BlastTab_UniProtID_to_Gene_Annotation.py -p uniprot_trembl.PARSED.dat.tsv -b {filtered_blastp_output} -o {outfile_name}
+python 03a_BlastTab_BestHit_Filter.py -i {tabular_blastp_output} -pml 50 -pid 40
+python 03b_BlastTab_UniProtID_to_Gene_Annotation.py -p uniprot_sprot.PARSED.dat.tsv -b {filtered_blastp_output} -o {outfile_name}
+python 03b_BlastTab_UniProtID_to_Gene_Annotation.py -p uniprot_trembl.PARSED.dat.tsv -b {filtered_blastp_output} -o {outfile_name}
 ```
 
 For Kofamscan:
 
 ```bash
-python 02_KofamScan_Filter_Convert.py -i {Kofamscan_output_file} -o {outfile_name}
+python 03c_KofamScan_Filter_Convert.py -i {Kofamscan_output_file} -o {outfile_name}
 ```
 
 At this point you have files containing results for each database in tab separated values (tsv) format.
@@ -94,8 +94,8 @@ At this point you have files containing results for each database in tab separat
 This step is optional. It will combine the tsv files from step 03 and also add to the file any genes that did not recieve an annotation above the thresholds as "Hypothetical Genes".
 
 ```bash
-python 03_Combine_Annotations.py -spb 01_Ecoli_ClstrRepSeq_SwissProt_Annotated.tsv -kfs 01_Ecoli_ClstrRepSeq_KEGG_Annotated.tsv -trb 01_Ecoli_ClstrRepSeq_TrEMBL_Annotated.tsv -o 02_Ecoli_ClstrRepSeq_Annotations.tsv
-python 03_Add_Unannotated_Genes.py -a 02_Ecoli_ClstrRepSeq_Annotations.tsv -q 00_Ecoli_ClstrRepSeq.faa -o 03_Ecoli_ClstrRepSeq_Annotations_NoMatch.tsv
+python 04a_Combine_Annotations.py -spb 01_Ecoli_ClstrRepSeq_SwissProt_Annotated.tsv -kfs 01_Ecoli_ClstrRepSeq_KEGG_Annotated.tsv -trb 01_Ecoli_ClstrRepSeq_TrEMBL_Annotated.tsv -o 02_Ecoli_ClstrRepSeq_Annotations.tsv
+python 04b_Add_Unannotated_Genes.py -a 02_Ecoli_ClstrRepSeq_Annotations.tsv -q 00_Ecoli_ClstrRepSeq.faa -o 03_Ecoli_ClstrRepSeq_Annotations_NoMatch.tsv
 ```
 
 ## Step 05: Plot 
