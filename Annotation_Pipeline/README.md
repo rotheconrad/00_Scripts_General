@@ -91,8 +91,27 @@ At this point you have files containing results for each database in tab separat
 
 ## Step 04: Combine results and add unanated genes.
 
-This step is optional. It will combine the tsv files from step 03 and also add to the file any genes that did not recieve an annotation above the thresholds as "Hypothetical Genes"
+This step is optional. It will combine the tsv files from step 03 and also add to the file any genes that did not recieve an annotation above the thresholds as "Hypothetical Genes".
+
+```bash
+python 03_Combine_Annotations.py -spb 01_Ecoli_ClstrRepSeq_SwissProt_Annotated.tsv -kfs 01_Ecoli_ClstrRepSeq_KEGG_Annotated.tsv -trb 01_Ecoli_ClstrRepSeq_TrEMBL_Annotated.tsv -o 02_Ecoli_ClstrRepSeq_Annotations.tsv
+python 03_Add_Unannotated_Genes.py -a 02_Ecoli_ClstrRepSeq_Annotations.tsv -q 00_Ecoli_ClstrRepSeq.faa -o 03_Ecoli_ClstrRepSeq_Annotations_NoMatch.tsv
+```
 
 ## Step 05: Plot 
 
+Transform the annotation files.
 
+```bash
+python 05a_Transform_Annotation_Results.py -a {Combined_Annotations_with_NoMatch} -o {outfile_name}
+```
+
+Create a list of gene types to count. The plot generating script below reads a list of gene names and performs a string match
+
+Build the stacked bar plots.
+```bash
+python 05b_Compare_Annotation_Results.py -i {transformed_annotations} -l Gene_Types_List.txt -o {outfile_name}
+```
+
+Example plot:
+![alt text](05c_Example_plot.png "Example plot.")
