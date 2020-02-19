@@ -2,6 +2,7 @@
 
 ## USAGE :: python scriptname.py -i infile.name -o outfile.name
 ## This script is to convert this file: https://www.genome.jp/kegg-bin/get_htext?ko00001.keg
+## ( Select "Download htext" from the top of the page )
 ## into a DataFrame style tab separated file containing A B C D on each line.
 ## Author :: Roth Conrad :: rotheconrad@gatech.edu :: https://github.com/rotheconrad
 ## Date Created :: Tuesday, June 18, 2019
