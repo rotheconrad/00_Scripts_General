@@ -91,20 +91,24 @@ At this point you have files containing results for each database in tab separat
 
 ## Step 04: Combine results and add unannotated genes.
 
-This step is optional. It will combine the tsv files from step 03 and also add to the file any genes that did not recieve an annotation above the thresholds as "Hypothetical Genes".
+At this point all the annotation information is in the .tsv files from Step 03. You can work with those files as is without finishing the pipeline. This current step will combine the .tsv files from step 03 and also add to the file any genes that did not recieve an annotation above the thresholds as "Hypothetical Genes".
 
 ```bash
 python 04a_Combine_Annotations.py -spb 01_Ecoli_ClstrRepSeq_SwissProt_Annotated.tsv -kfs 01_Ecoli_ClstrRepSeq_KEGG_Annotated.tsv -trb 01_Ecoli_ClstrRepSeq_TrEMBL_Annotated.tsv -o 02_Ecoli_ClstrRepSeq_Annotations.tsv
 python 04b_Add_Unannotated_Genes.py -a 02_Ecoli_ClstrRepSeq_Annotations.tsv -q 00_Ecoli_ClstrRepSeq.faa -o 03_Ecoli_ClstrRepSeq_Annotations_NoMatch.tsv
 ```
 
-## Step 05: Plot 
+## Step 05: Transform combined results file. 
 
-Transform the annotation files.
+Transform the annotation files. This transformation will make it easier to read the combined annotation file. They are great for exploratory analysis. You can open them with Excel to read through them, or you can read them in as a dataframe with Pandas in Python or with R.
 
 ```bash
 python 05a_Transform_Annotation_Results.py -a {Combined_Annotations_with_NoMatch} -o {outfile_name}
 ```
+
+## Step 06: Plot a summary of the combined results.
+
+This step uses a list of desired gene types to count the number of genes of that type and build a stacked bar plot of the results for each database.
 
 Create a list of gene types to count with columns Legend Name and String to Match separated by a comma and a space. The file should include the column names. The plot generating script below reads the list of gene types and performs a string match. Matches are not case sensitive. Use "|" for or to count multiple variations as one type. Each gene is counted only once. Gene will be counted in the first category on the list that it matches.
 
@@ -128,8 +132,8 @@ Example Gene_Types_Lists.txt
 Build the stacked bar plots.
 
 ```bash
-python 05b_Compare_Annotation_Results.py -i {transformed_annotations} -l Gene_Types_List.txt -c {num_legend_columns} -o {outfile_name}
+python 06a_Compare_Annotation_Results.py -i {transformed_annotations} -l Gene_Types_List.txt -c {num_legend_columns} -o {outfile_name}
 ```
 
 Example plot:
-![alt text](05c_Example_plot.png "Example plot.")
+![alt text](06b_Example_plot.png "Example plot.")
