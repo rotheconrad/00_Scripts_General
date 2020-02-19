@@ -2,10 +2,12 @@
 
 '''
 
-Build Plots to compare annotation results for 2 difference organisms
+Build Plots to summarize and compare annotation results from the three
+databases in used in the Annotation Pipeline.
 
-writes stacked barplots as .png files.
-writes other gene category annotations to tsv files for each database.
+Writes stacked barplots as .png files.
+Writes gene types counts to .tsv file.
+Writes annotations to tsv files for each database.
 
 -------------------------------------------
 Author :: Roth Conrad
@@ -25,12 +27,12 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 
-def get_summaries(infile, list, out):
+def get_summaries(infile, gene_list, out):
     """ Read input table and generate counts """
 
     data = defaultdict(list)
 
-    df = pd.read_csv(f1, sep='\t', index_col=0)
+    df = pd.read_csv(infile, sep='\t', index_col=0)
 
     dbs = ['KEGG', 'TrEMBL', 'SwissProt']
     gene_legend = []
@@ -38,80 +40,65 @@ def get_summaries(infile, list, out):
 
     # gn is also the row names or index
     # This is a list of key words to look for in the gene annotations
-    with open(list) as f:
+    with open(gene_list) as f:
         header = f.readline()
         for l in f:
             X = l.rstrip().split(', ')
             gene_legend.append(X[0])
             gene_match.append(X[1])
+    gene_legend.append('Other Genes')
 
-    # This is the 3 databases x the 2 organisms
-    colnames = [
-                f'{s1}_KEGG', f'{s2}_KEGG', f'{s1}_TrEMBL',
-                f'{s2}_TrEMBL', f'{s1}_SwissProt', f'{s2}_SwissProt',
-                ]
+    gene_counts = open(f'{out}_gene_counts.tsv', 'w')
 
-    Master_other1 = df1
-    Master_other2 = df2
-    total1 = df1.shape[0]
-    total2 = df2.shape[0]
+    Master_other = df
+    total = df.shape[0]
 
-    for d in db: # for each database
+    for d in dbs: # for each database
 
         # the other category is built by subtracting results of each
         # search from the initial databases. Everything remaining after
         # searching all of the gn list is the other category.
-        other1 = df1
-        other2 = df2
+        other = df
 
-        print(f'\n\n{d}')
+        print(d)
+        gene_counts.write(d)
 
-        for g in gn: # for each gene category in gn list calculation for total
+        # for each gene category in gn list calculation for total
+        for g in gene_match:
 
             # Select gene category
-            select1 = other1[d].str.contains(g, case=False, regex=True)
-            select2 = other2[d].str.contains(g, case=False, regex=True)
-            Mselect1 = Master_other1[d].str.contains(g, case=False, regex=True)
-            Mselect2 = Master_other2[d].str.contains(g, case=False, regex=True)
+            select = other[d].str.contains(g, case=False, regex=True)
+            Mselect = Master_other[d].str.contains(g, case=False, regex=True)
 
-            geneD1 = other1[select1]
-            geneD2 = other2[select2]
+            geneD = other[select]
             # Select remaining genes
-            other1 = other1[~select1]
-            other2 = other2[~select2]
-            Master_other1 = Master_other1[~Mselect1]
-            Master_other2 = Master_other2[~Mselect2]
+            other = other[~select]
+            Master_other = Master_other[~Mselect]
 
-            len1 = geneD1.shape[0]
-            len2 = geneD2.shape[0]
-            data[g].append(len1)
-            data[g].append(len2)
+            glen = geneD.shape[0]
+            data[g].append(glen)
 
-            print(
-                g, len1, f'{len1/total1*100:.2f}',
-                len2, f'{len2/total2*100:.2f}'
-                )
+            print(g, glen, f'{glen/total*100:.2f}')
+            gene_counts.write(f'{g}\t{glen}\t{glen/total*100:.2f}\n')
 
-
+        print('\n\n')
+        gene_counts.write('\n\n')
         ### Calculate "other" gene category ###
-        data['other'].append(float(len(other1)))
-        data['other'].append(float(len(other2)))
+        data['other'].append(float(len(other)))
 
         ### Write other category for each db to file ###
-        other1.to_csv(f'{out}_{s1}_{d}.tsv', sep='\t')
-        other2.to_csv(f'{out}_{s2}_{d}.tsv', sep='\t')
+        other.to_csv(f'{out}_{d}_OtherGenes.tsv', sep='\t')
 
     ### Write master other category to file ###
-    Master_other1.to_csv(f'{out}_{s1}_Master.tsv', sep='\t')
-    Master_other2.to_csv(f'{out}_{s2}_Master.tsv', sep='\t')
+    Master_other.to_csv(f'{out}_Master_OtherGenes.tsv', sep='\t')
 
     ### Convert Dictionaries to DataFrames ####
-    df = pd.DataFrame.from_dict(data, orient='index', columns=colnames)
+    df = pd.DataFrame.from_dict(data, orient='index', columns=dbs)
 
-    return df
+    return df, gene_legend
 
 
-def Plot_Annotation_Summary(df, out):
+def Plot_Annotation_Summary(df, gene_legend, legend_columns, out):
     """ Plot Stacked Bar Charts by PanCats for each DB """
 
     colors = [
@@ -144,8 +131,8 @@ def Plot_Annotation_Summary(df, out):
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(
         handles[::-1],
-        labels[::-1],
-        ncol=3,
+        gene_legend[::-1],
+        ncol=legend_columns,
         loc='center left',
         bbox_to_anchor=(0.98, 0.5),
         fancybox=True,
@@ -181,6 +168,13 @@ def main():
         #required=True
         )
     parser.add_argument(
+        '-c', '--legend_columns',
+        help='Number of columns for the legend.',
+        metavar='',
+        type=int,
+        #required=True
+        )
+    parser.add_argument(
         '-o', '--out_file',
         help='What do you want to name the output file?',
         metavar='',
@@ -190,15 +184,20 @@ def main():
     args=vars(parser.parse_args())
 
     # Do what you came here to do:
-    print('Running Script...')
+    print('\n\nRunning Script...\n\n')
 
-    df = get_summaries(
+    df, gene_legend = get_summaries(
                 args['transformed_annotation_file'],
                 args['gene_types_list'],
                 args['out_file']
                 )
 
-    Plot_Annotation_Summary(df, args['out_file'])
+    Plot_Annotation_Summary(
+                        df,
+                        gene_legend,
+                        args['legend_columns'], 
+                        args['out_file']
+                        )
 
 
 if __name__ == "__main__":
