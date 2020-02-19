@@ -19,14 +19,7 @@ conda activate kofamscan
 conda install -c conda-forge ruby
 ```
 
-Kofamscan can be run with default settings like this:
-
-```bash
-ruby -o {outfile_name} {input_fasta}
-```
-
 Details of Blast+ can be found [here](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download).
-
 
 Blast+ can be easily installed using a [conda environment](https://docs.conda.io/en/latest/miniconda.html):
 
@@ -34,12 +27,6 @@ Blast+ can be easily installed using a [conda environment](https://docs.conda.io
 conda create -n blastplus
 conda activate blastplus
 conda install bioconda::blast=2.7.1 conda-forge::gnutls conda-forge::nettle
-```
-
-Blastp can be run with similar to this (the -outfmt 6 format order is required for downstream processing):
-
-```bash
-blastp -task 'blastp' -evalue 0.01 -max_target_seqs 10 -num_threads 2 -db {pathto_db} -query {input_fasta} -out {outfile_name} -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen'
 ```
 
 ## Step 01: Download and parse databases.
@@ -54,11 +41,58 @@ wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/c
 wget 'https://www.genome.jp/kegg-bin/download_htext?htext=ko00001&format=htext&filedir=' -O ko00001.keg
 ```
 
-I wrote some python code to parse these database files for use downstream.
+Need to make blast databases for SwissProt and TrEMBL fasta sequences.
 
-```python
-* python ../Scripts/Parse_UniProtDBs_datFile.py -i uniprot_sprot.dat -o uniprot_sprot.PARSED.dat.tsv
-* python ../Scripts/Parse_UniProtDBs_datFile.py -i uniprot_trembl.dat -o  uniprot_trembl.PARSED.dat.tsv
-* python ../Scripts/Check_KEGG_in_UniProt.py -UP uniprot_sprot.PARSED.dat.tsv -KO KEGG_List.tsv -o KEGG_Not_in_SwissProt.tsv
+```bash
+makeblastdb -dbtype prot -in uniprot_sprot.fasta
+makeblastdb -dbtype prot -in uniprot_trembl.fasta
 ```
-* Parsing the TrEMBL.dat file can take 3-4 hours.
+
+I wrote some python code to parse these database .dat files for use downstream (Parsing the TrEMBL.dat file can take 3-4 hours).
+
+```bash
+python ../Scripts/Parse_UniProtDBs_datFile.py -i uniprot_sprot.dat -o uniprot_sprot.PARSED.dat.tsv
+python ../Scripts/Parse_UniProtDBs_datFile.py -i uniprot_trembl.dat -o  uniprot_trembl.PARSED.dat.tsv
+```
+
+## Step 02: Run Blastp or Kofamscan as desired.
+
+Blastp can be run with similar to this (the -outfmt 6 format order is required for downstream processing):
+
+```bash
+blastp -task 'blastp' -evalue 0.01 -max_target_seqs 10 -num_threads 2 -db {pathto_db} -query {input_fasta} -out {outfile_name} -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen'
+```
+
+Kofamscan can be run with default settings like this:
+
+```bash
+ruby -o {outfile_name} {input_fasta}
+```
+
+## Step 03: Filter Results and retrieve annotation information.
+
+There are various ways to filter results and many ideas on which cut offs to use. For blastp, I'm selecting a "best hit" based on the bitscore. For Kofamscan I'm choosing only the matches assigned an asterisks indicating they are above precomputed thresholds for high quality matches to the hmm model. For blastp I've assigned parameters to choose a percent match length (alignment length / query length) and percent sequence identity.
+
+For blastp using either TrEMBL or UniProt databases:
+
+```bash
+python 01_BlastTab_BestHit_Filter.py -i {tabular_blastp_output} -pml 50 -pid 40
+python 02_BlastTab_UniProtID_to_Gene_Annotation.py -p uniprot_sprot.PARSED.dat.tsv -b {filtered_blastp_output} -o {outfile_name}
+python 02_BlastTab_UniProtID_to_Gene_Annotation.py -p uniprot_trembl.PARSED.dat.tsv -b {filtered_blastp_output} -o {outfile_name}
+```
+
+For Kofamscan:
+
+```bash
+python 02_KofamScan_Filter_Convert.py -i {Kofamscan_output_file} -o {outfile_name}
+```
+
+At this point you have files containing results for each database in tab separated values (tsv) format.
+
+## Step 04: Combine results and add unanated genes.
+
+This step is optional. It will combine the tsv files from step 03 and also add to the file any genes that did not recieve an annotation above the thresholds as "Hypothetical Genes"
+
+## Step 05: Plot 
+
+
