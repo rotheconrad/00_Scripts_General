@@ -4,7 +4,7 @@ This workflow produces separate files in tab separated value (tsv) format for AN
 
 *This workflow can also be used with Genomic FASTA and CDS from genomic FASTA files retrieved from the [NCBI assembly database](https://www.ncbi.nlm.nih.gov/assembly/). In this case, skip the renaming step for sequence names in the reference fasta file in Step 01 and skip all of Step 02. Use the -n flag for NCBI in Step 03.*
 
-## Step 00: Required tools :: Blast+ (Blastp) and Kofamscan.
+## Step 00: Required tools :: Prodigal and Magic Blast.
 
 
 ### Prodigal for protein coding gene prediction.
@@ -28,36 +28,44 @@ Information and installation instructions for Magic Blast can be found [here](ht
 ## Step 01: Map metagenomic reads to reference genome(s) / MAG(s).
 
 ### Check metagenome read names and rename if needed. (fastq or fasta).
-
-
+*Need to add instructions*
 
 ### Check sequence names in reference fasta files and rename if needed.
+*Need to add instructions*
 
 ### For individual genome or MAG:
 
 1. Make Magic Blast database.
 
-    *If you also have Blast+ installed on your system, make certain you are calling the makeblastdb program that comes with Magic Blast and not the version that comes with Blast+*
+    *If you also have Blast+ installed on your system, make certain you are calling the makeblastdb program that comes with Magic Blast and not the version that comes with Blast+. Try: which makeblastdb*
 
     ```bash
     makeblastdb -dbtype nucl -in Combined_Genomes.fasta -out Combined_Genoems.fasta -parse_seqids
     ```
 
-    *If you forget the -parse_seqids flag it will cause errors later*
+    *If you forget the -parse_seqids flag it will cause errors later.*
 
-2. Run Magic Blast
+2. Run Magic Blast.
 
+    *For the outfile_name of the -out flag use the naming scheme of uniqueID_metagenomeID.blast where uniqueID is the unique identifier for your genome or MAG.*
+    
     ```bash
     magicblast -query {metagenome_fasta} -db Combined_Genomes.fasta -infmt (fasta or fastq) -no_unaligned -splice F -outfmt tabular -parse_deflines T -out {outfile_name}.blast
     ```
 
-3. Shuffle blast results
+    *If you forget to set the 0parse_deflines flag to true it will cause errors later.*
+
+3. Shuffle blast results.
+
+    *The Magic Blast results are output in an ordered format. The filter script keeps the first best match which will bias the results. Using the blast command shuf will randomize the oder of the Magic Blast results file to prevent this bias.*
 
     ```bash
     shuf {outfile_name}.blast > {outfile_name}.shuf.blast
     ```
 
 4. Filter results for best hits
+
+    *Magic Blast will report multiple results per metagenomic read. For this analysis we only want to count each read once. Magic Blast will also report short sequence alignments of high identity. If a sequence alignment is 20 base pairs but the read is 150 base pairs this is considered to be a wrong match so we remove it. The -pml flag uses a ratio of alignment length / read length to identify results of this type. A value of 0.7, 0.8 or 0.9 is recommended.*
 
     ```bash
     python 01_MagicBlast_ShortRead_Filter.py -i {outfile_name}.shuf.blast -pml 0.9 -rl 70
@@ -130,6 +138,7 @@ Information and installation instructions for Magic Blast can be found [here](ht
         done < uniqueID_list.txt
     ```
 
+
 ## Step 02: Predict protein coding genes with Prodigal.
 
 As per the Prodigal documentation, Prodigal can be easily run like this:
@@ -138,7 +147,8 @@ As per the Prodigal documentation, Prodigal can be easily run like this:
 prodigal -i genomic_fasta.fna -o my.genes -a my.proteins.faa
 ```
 
-We only care about the my.proteins.faa file for the purpose of this pipeline.
+*We only care about the my.proteins.faa file for the purpose of this pipeline.*
+
 
 ## Step 03: Calculate ANIr and Coverage.
 
@@ -155,19 +165,15 @@ python 03_MagicBlast_CoverageMagic.py -m {metagenome.fasta} -g {genomic_fasta.fn
 - TAD 80 removes the top 10% and bottom 10% of base pair depths and caluclates coverage from the middle 80% of values. Intended to reduce effects of conserved motif peaks and contig edge valleys.
 - Coverage = base pairs recruited / length of genome, contig, intergenic region, or gene
 
-
 #### Coverage calculated as Breadth:
 - number of positions in reference sequence covered by at least one read alignment divided the length of the reference sequence.
-
 
 #### Relative Abundance is calculated as:
 - base pairs recruited / base pairs in metagenome * 100
 - It is the percent of base pairs recruited out of the total base pairs sequenced in the metagenome.
 
-
 #### ANIr is calculated as:
 - average percent identity of sequence alignments for all reads (should be 1 blast match per read)
-
 
 #### This workflow leads to the following result files:
 
@@ -186,6 +192,7 @@ python 03_MagicBlast_CoverageMagic.py -m {metagenome.fasta} -g {genomic_fasta.fn
     - \{out_file_prefix\}_intergene_anir.tsv
 
 
+
 ## Step 04: Generate summary plots.
 
 ```bash
@@ -194,6 +201,7 @@ python 04_MagicBlast_CoverageMagic_SummaryPlot.py -pre {outfile_prefix} -thd 95 
 
 Example plot:
 ![alt text](04b_Example_plot.png "Example plot.")
+
 
 ## Step 05: Build Data Table of Whole Genome stats for multiple genomes across multiple metagenomes
 
