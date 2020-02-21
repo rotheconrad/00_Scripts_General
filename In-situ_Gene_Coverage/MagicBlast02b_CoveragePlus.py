@@ -36,16 +36,17 @@ This tool takes the following input parameters:
 
 This script returns the following files:
 
-    * 2 column tsv output of Contig(or gene_name) \t coverage(or ANIr)
+    * 3 column tsv output of Contig(or gene_name), coverage(or ANIr),
+      sequence length.
     * Writes 8 files total:
         - {out_file_prefix}_genome_by_bp.tsv
         - {out_file_prefix}_genome.tsv
         - {out_file_prefix}_contig_tad.tsv
         - {out_file_prefix}_contig_breadth.tsv
-        - {out_file_prefix}_contig_ani.tsv
+        - {out_file_prefix}_contig_anir.tsv
         - {out_file_prefix}_gene_tad.tsv
         - {out_file_prefix}_gene_breadth.tsv
-        - {out_file_prefix}_gene_ani.tsv
+        - {out_file_prefix}_gene_anir.tsv
 
 This script requires the following packages:
 
@@ -349,10 +350,10 @@ def calc_tad_anir_relabndc(
     _ = write_file(
         contig_breadth, rgf_len, outpre, '_contig_breadth.tsv', precision
         )
-    _ = write_file(contig_ani, rgf_len, outpre, '_contig_ani.tsv', precision)
+    _ = write_file(contig_ani, rgf_len, outpre, '_contig_anir.tsv', precision)
     _ = write_file(gene_tad, gn_len, outpre, '_gene_tad.tsv', precision)
     _ = write_file(gene_breadth, gn_len, outpre, '_gene_breadth.tsv', precision)
-    _ = write_file(gene_ani, gn_len, outpre, '_gene_ani.tsv', precision)
+    _ = write_file(gene_ani, gn_len, outpre, '_gene_anir.tsv', precision)
 
     return wgtad, wgbreadth, wgani, relabndc, total_metagenome_bp
 

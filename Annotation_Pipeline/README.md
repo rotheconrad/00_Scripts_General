@@ -10,7 +10,7 @@ All of the Python scripts in this repository are written for Python version 3.6+
 python scriptname.py -h
 ```
 
-## Step 0: Required tools :: Blast+ (Blastp) and Kofamscan.
+## Step 00: Required tools :: Blast+ (Blastp) and Kofamscan.
 
 Kofamscan and hmm databases can be downloaded from the Download section of [this
 page](https://www.genome.jp/tools/kofamkoala/).
