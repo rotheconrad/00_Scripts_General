@@ -4,6 +4,38 @@ This workflow produces separate files in tab separated value (tsv) format for AN
 
 *This workflow can also be used with Genomic FASTA and CDS from genomic FASTA files retrieved from the [NCBI assembly database](https://www.ncbi.nlm.nih.gov/assembly/). In this case, skip the renaming step for sequence names in the reference fasta file in Step 01 and skip all of Step 02. Use the -n flag for NCBI in Step 03.*
 
+#### Coverage calculated as Truncated Average Depth (TAD):
+- TAD 80 removes the top 10% and bottom 10% of base pair depths and caluclates coverage from the middle 80% of values. Intended to reduce effects of conserved motif peaks and contig edge valleys.
+- Coverage = base pairs recruited / length of genome, contig, intergenic region, or gene
+- Set TAD to 100 for no truncatation.
+
+#### Coverage calculated as Breadth:
+- number of positions in reference sequence covered by at least one read alignment divided the length of the reference sequence.
+
+#### Relative Abundance is calculated as:
+- base pairs recruited / base pairs in metagenome * 100
+- It is the percent of base pairs recruited out of the total base pairs sequenced in the metagenome.
+
+#### ANIr is calculated as:
+- average percent identity of sequence alignments for all reads (should be 1 blast match per read)
+
+#### This workflow leads to the following result files:
+
+- 3 column tsv output of Contig(or gene_name), coverage(or ANIr), sequence length.
+- Writes 11 files total:
+    - \{out_file_prefix\}_genome_by_bp.tsv
+    - \{out_file_prefix\}_genome.tsv
+    - \{out_file_prefix\}_contig_tad.tsv
+    - \{out_file_prefix\}_contig_breadth.tsv
+    - \{out_file_prefix\}_contig_anir.tsv
+    - \{out_file_prefix\}_gene_tad.tsv
+    - \{out_file_prefix\}_gene_breadth.tsv
+    - \{out_file_prefix\}_gene_anir.tsv
+    - \{out_file_prefix\}_intergene_tad.tsv
+    - \{out_file_prefix\}_intergene_breadth.tsv
+    - \{out_file_prefix\}_intergene_anir.tsv
+
+
 ## Step 00: Required tools :: Prodigal and Magic Blast.
 
 
@@ -48,7 +80,7 @@ Information and installation instructions for Magic Blast can be found [here](ht
 2. Run Magic Blast.
 
     *For the outfile_name of the -out flag use the naming scheme of uniqueID_metagenomeID.blast where uniqueID is the unique identifier for your genome or MAG.*
-    
+
     ```bash
     magicblast -query {metagenome_fasta} -db Combined_Genomes.fasta -infmt (fasta or fastq) -no_unaligned -splice F -outfmt tabular -parse_deflines T -out {outfile_name}.blast
     ```
@@ -160,38 +192,9 @@ python 03_MagicBlast_CoverageMagic.py -m {metagenome.fasta} -g {genomic_fasta.fn
 
 *If using Genomic FASTA and CDS from genomic FASTA files retrieved from the NCBI assembly database, the Genomic FASTA goes to the -g flag and CDS from genomic FASTA goes to the -p flag replacing the my.proteins.faa file from Prodigal.*
 
-#### Coverage calculated as Truncated Average Depth (TAD):
-- Set TAD to 100 for no truncatation.
-- TAD 80 removes the top 10% and bottom 10% of base pair depths and caluclates coverage from the middle 80% of values. Intended to reduce effects of conserved motif peaks and contig edge valleys.
-- Coverage = base pairs recruited / length of genome, contig, intergenic region, or gene
+The -c flag is a cutoff threshold for the percent identity of the metagenomic read alignments to the genomic reference. Sequence discontinuity gaps for sequence discrete populations are generally observed around 95% percent sequence identity. This is a good starting point, but depending on your target population you may want to increase or decrease this value. Looking at the distribution of percent identity values or a recruitment plot is a great way to investigate the sequence discontinuity for your population of interest.
 
-#### Coverage calculated as Breadth:
-- number of positions in reference sequence covered by at least one read alignment divided the length of the reference sequence.
-
-#### Relative Abundance is calculated as:
-- base pairs recruited / base pairs in metagenome * 100
-- It is the percent of base pairs recruited out of the total base pairs sequenced in the metagenome.
-
-#### ANIr is calculated as:
-- average percent identity of sequence alignments for all reads (should be 1 blast match per read)
-
-#### This workflow leads to the following result files:
-
-- 3 column tsv output of Contig(or gene_name), coverage(or ANIr), sequence length.
-- Writes 11 files total:
-    - \{out_file_prefix\}_genome_by_bp.tsv
-    - \{out_file_prefix\}_genome.tsv
-    - \{out_file_prefix\}_contig_tad.tsv
-    - \{out_file_prefix\}_contig_breadth.tsv
-    - \{out_file_prefix\}_contig_anir.tsv
-    - \{out_file_prefix\}_gene_tad.tsv
-    - \{out_file_prefix\}_gene_breadth.tsv
-    - \{out_file_prefix\}_gene_anir.tsv
-    - \{out_file_prefix\}_intergene_tad.tsv
-    - \{out_file_prefix\}_intergene_breadth.tsv
-    - \{out_file_prefix\}_intergene_anir.tsv
-
-
+The -d flag is for the truncated average value or TAD parameter. A value of 100 will return results without truncation.
 
 ## Step 04: Generate summary plots.
 
