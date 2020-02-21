@@ -26,20 +26,20 @@ This workflow produces separate files in tab separated value (tsv) format for AN
 
 - 3 column tsv output of Contig(or gene_name), coverage(or ANIr), sequence length.
 - Writes 11 files total:
-- \{out_file_prefix\}_genome_by_bp.tsv
-- \{out_file_prefix\}_genome.tsv
-- \{out_file_prefix\}_contig_tad.tsv
-- \{out_file_prefix\}_contig_breadth.tsv
-- \{out_file_prefix\}_contig_anir.tsv
-- \{out_file_prefix\}_gene_tad.tsv
-- \{out_file_prefix\}_gene_breadth.tsv
-- \{out_file_prefix\}_gene_anir.tsv
-- \{out_file_prefix\}_intergene_tad.tsv
-- \{out_file_prefix\}_intergene_breadth.tsv
-- \{out_file_prefix\}_intergene_anir.tsv
+    - \{out_file_prefix\}_genome_by_bp.tsv
+    - \{out_file_prefix\}_genome.tsv
+    - \{out_file_prefix\}_contig_tad.tsv
+    - \{out_file_prefix\}_contig_breadth.tsv
+    - \{out_file_prefix\}_contig_anir.tsv
+    - \{out_file_prefix\}_gene_tad.tsv
+    - \{out_file_prefix\}_gene_breadth.tsv
+    - \{out_file_prefix\}_gene_anir.tsv
+    - \{out_file_prefix\}_intergene_tad.tsv
+    - \{out_file_prefix\}_intergene_breadth.tsv
+    - \{out_file_prefix\}_intergene_anir.tsv
 
 
-*This workflow can also be used with Genomic FASTA and CDS from genomic FASTA files retrieved from the [NCBI assembly database](https://www.ncbi.nlm.nih.gov/assembly/). In this case, skip the renaming step for sequence names in the reference fasta file and skip Step 02. Use the -n flag for NCBI in Step 03.*
+*This workflow can also be used with Genomic FASTA and CDS from genomic FASTA files retrieved from the [NCBI assembly database](https://www.ncbi.nlm.nih.gov/assembly/). In this case, skip the renaming step for sequence names in the reference fasta file in Step 01 and skip all of Step 02. Use the -n flag for NCBI in Step 03.*
 
 ## Step 00: Required tools :: Blast+ (Blastp) and Kofamscan.
 
@@ -66,20 +66,140 @@ Information and installation instructions for Magic Blast can be found [here](ht
 
 ### Check metagenome read names and rename if needed. (fastq or fasta).
 
+
+
 ### Check sequence names in reference fasta files and rename if needed.
 
 ### For individual genome or MAG:
 
+1. Make Magic Blast database.
+
+    *If you also have Blast+ installed on your system, make certain you are calling the makeblastdb program that comes with Magic Blast and not the version that comes with Blast+*
+
+    ```bash
+    makeblastdb -dbtype nucl -in Combined_Genomes.fasta -out Combined_Genoems.fasta -parse_seqids
+    ```
+
+    *If you forget the -parse_seqids flag it will cause errors later*
+
+2. Run Magic Blast
+
+    ```bash
+    magicblast -query {metagenome_fasta} -db Combined_Genomes.fasta -infmt (fasta or fastq) -no_unaligned -splice F -outfmt tabular -parse_deflines T -out {outfile_name}.blast
+    ```
+
+3. Shuffle blast results
+
+    ```bash
+    shuf {outfile_name}.blast > {outfile_name}.shuf.blast
+    ```
+
+4. Filter results for best hits
+
+    ```bash
+    python 01_MagicBlast_ShortRead_Filter.py -i {outfile_name}.shuf.blast -pml 0.9 -rl 70
+    ```
+
+
 ### Competitive read recruitment for multiple genomes or MAGs:
 
+1. Append a unique identifier to the beginning of the sequence name for all contigs in the genome or MAG files
+
+    Adjst the cut parameters to select a unique ID from your genomic fasta files to append to the begginging of your sequence names for each genome / MAG.
+
+    ```bash
+    for file in *.fna
+        do
+            uniqueID=`basename $file | cut -d _ -f 1
+            sed -i "s/>/>${uniqueID}_/g" $file
+        done
+    ```
+
+2. Concatenate all genomes / MAGs into a single fasta file.
+
+    ```bash
+    cat *.fna >> Combined_Genomes.fasta
+    ```
+    *Change .fna to match the file extention of your genomes / MAGs*
+
+3. Make Magic Blast database.
+
+    *If you also have Blast+ installed on your system, make certain you are calling the makeblastdb program that comes with Magic Blast and not the version that comes with Blast+*
+
+    ```bash
+    makeblastdb -dbtype nucl -in Combined_Genomes.fasta -out Combined_Genoems.fasta -parse_seqids
+    ```
+
+    *If you forget the -parse_seqids flag it will cause errors later*
+
+4. Run Magic Blast
+
+    *For the outfile_name of the -out flag use the naming scheme of uniqueID_metagenomeID.blast where uniqueID is the unique identifier for your genome or MAG.*
+
+    ```bash
+    magicblast -query {metagenome_fasta} -db Combined_Genomes.fasta -infmt (fasta or fastq) -no_unaligned -splice F -outfmt tabular -parse_deflines T -out {outfile_name}.blast
+    ```
+
+5. Shuffle blast results
+
+    ```bash
+    shuf {outfile_name}.blast > {outfile_name}.shuf.blast
+    ```
+
+6. Filter results for best hits
+
+    ```bash
+    python 01_MagicBlast_ShortRead_Filter.py -i {outfile_name}.shuf.blast -pml 0.9 -rl 70
+    ```
+
+6. De-concatenate
+
+    ```bash
+    for file in *.fna
+        do
+            uniqueID=`basename $file | cut -d _ -f 1`
+            echo $uniqueID >> uniqueID_list.txt
+        done
+
+    while read uniqueID
+        do
+            grep $uniqueID {outfile_name}.fltrdBstHts.blst >> uniqueID.blast
+        done < uniqueID_list.txt
+    ```
 
 ## Step 02: Predict protein coding genes with Prodigal.
 
+As per the Prodigal documentation, Prodigal can be easily run like this:
+
+```bash
+prodigal -i genomic_fasta.fna -o my.genes -a my.proteins.faa
+```
+
+We only care about the my.proteins.faa file for the purpose of this pipeline.
 
 ## Step 03: Calculate ANIr and Coverage.
 
+*The scripts takes 1 uniqueID.blast file at a time with its corresponding metagenome, genomic fasta, and predicted genes files. For the outfile_prefix of the -o flag use the naming scheme of uniqueID_metagenomeID where uniqueID is the unique identifier for your genome or MAG.*
+
+```bash
+python 03_MagicBlast_CoverageMagic.py -m {metagenome.fasta} -g {genomic_fasta.fna} -p {my.proteins.faa} -b {uniqueID.blast} -c 95 -d 80 -o {outfile_prefix} (add -n if using NCBI Assembly files)
+```
+
+*If using Genomic FASTA and CDS from genomic FASTA files retrieved from the NCBI assembly database, the Genomic FASTA goes to the -g flag and CDS from genomic FASTA goes to the -p flag replacing the my.proteins.faa file from Prodigal.*
 
 ## Step 04: Generate summary plots.
 
+```bash
+python 04_MagicBlast_CoverageMagic_SummaryPlot.py -pre {outfile_prefix} -thd 95 -tad 80
+```
+
 Example plot:
 ![alt text](04b_Example_plot.png "Example plot.")
+
+## Step 05: Build Data Table of Whole Genome stats for multiple genomes across multiple metagenomes
+
+Move all the genome.tsv files you want to place in the table into their own directory.
+
+```bash
+python 05_MagicBlast_CoverageMagic_CombineGenomeStats.py -gtd {genome.tsv directory} -o {outfile_name}
+```
