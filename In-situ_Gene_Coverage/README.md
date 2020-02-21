@@ -6,7 +6,7 @@ This workflow produces separate files in tab separated value (tsv) format for AN
 #### Coverage calculated as Truncated Average Depth (TAD):
 - Set TAD to 100 for no truncatation.
 - TAD 80 removes the top 10% and bottom 10% of base pair depths and caluclates coverage from the middle 80% of values. Intended to reduce effects of conserved motif peaks and contig edge valleys.
-- Coverage = base pairs recruited / length of genome, contig, or gene
+- Coverage = base pairs recruited / length of genome, contig, intergenic region, or gene
 
 
 #### Coverage calculated as Breadth:
@@ -26,17 +26,17 @@ This workflow produces separate files in tab separated value (tsv) format for AN
 
 - 3 column tsv output of Contig(or gene_name), coverage(or ANIr), sequence length.
 - Writes 11 files total:
-    - {out_file_prefix}_genome_by_bp.tsv
-    - {out_file_prefix}_genome.tsv
-    - {out_file_prefix}_contig_tad.tsv
-    - {out_file_prefix}_contig_breadth.tsv
-    - {out_file_prefix}_contig_anir.tsv
-    - {out_file_prefix}_gene_tad.tsv
-    - {out_file_prefix}_gene_breadth.tsv
-    - {out_file_prefix}_gene_anir.tsv
-    - {out_file_prefix}_intergene_tad.tsv
-    - {out_file_prefix}_intergene_breadth.tsv
-    - {out_file_prefix}_intergene_anir.tsv
+- \{out_file_prefix\}_genome_by_bp.tsv
+- \{out_file_prefix\}_genome.tsv
+- \{out_file_prefix\}_contig_tad.tsv
+- \{out_file_prefix\}_contig_breadth.tsv
+- \{out_file_prefix\}_contig_anir.tsv
+- \{out_file_prefix\}_gene_tad.tsv
+- \{out_file_prefix\}_gene_breadth.tsv
+- \{out_file_prefix\}_gene_anir.tsv
+- \{out_file_prefix\}_intergene_tad.tsv
+- \{out_file_prefix\}_intergene_breadth.tsv
+- \{out_file_prefix\}_intergene_anir.tsv
 
 
 *This workflow can also be used with Genomic FASTA and CDS from genomic FASTA files retrieved from the [NCBI assembly database](https://www.ncbi.nlm.nih.gov/assembly/). In this case, skip the renaming step for sequence names in the reference fasta file and skip Step 02. Use the -n flag for NCBI in Step 03.*
@@ -80,3 +80,6 @@ Information and installation instructions for Magic Blast can be found [here](ht
 
 
 ## Step 04: Generate summary plots.
+
+Example plot:
+![alt text](04b_Example_plot.png "Example plot.")
