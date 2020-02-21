@@ -110,7 +110,9 @@ python 05a_Transform_Annotation_Results.py -a {Combined_Annotations_with_NoMatch
 
 This step uses a list of desired gene types to count the number of genes of that type and build a stacked bar plot of the results for each database.
 
-Create a list of gene types to count with columns "Legend Name and String to Match" separated by a comma and a space. The file should include the column names. The plot generating script below reads the list of gene types and performs a string match. Matches are not case sensitive. Use "|" for or to count multiple variations as one type. Each gene is counted only once. Gene will be counted in the first category on the list that it matches.
+Create a list of gene types to count with columns "Legend Name and String to Match" separated by a comma and a space. The file should include the column names.
+
+The plot generating script below reads the list of gene types and performs a string match. Matches are not case sensitive. Use "|" for or to count multiple variations as one type. Each gene is counted only once. Gene will be counted in the first category on the list that it matches.
 
 Example Gene_Types_Lists.txt
 
