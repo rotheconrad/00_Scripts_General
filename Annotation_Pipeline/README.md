@@ -1,8 +1,14 @@
 # Annotation Pipeline for TrEMBL, UniProt, and KEGG
 
 This is a workflow for annotating amino acid sequences in fasta format using
-the three databases. Includes instructions for downloading and converting the
-databases.
+the three databases. Includes steps to download and parse the
+databases to match database query results with the annotation information as well as steps to combine, filter, and summarize the results. This workflow produces tables in tab separated value (tsv) format for the annotation of results of each each database. tsv files can be easily opened in Excel, or imported into Python with Pandas or read into R for further analysis. There is also an option to generate a stacked bar plot summary in .png format.
+
+All of the Python scripts in this repository are written for Python version 3.6+. They can be executed and help output obtained by entering:
+
+```bash
+python scriptname.py -h
+```
 
 ## Step 0: Required tools :: Blast+ (Blastp) and Kofamscan.
 
