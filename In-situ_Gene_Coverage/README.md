@@ -1,38 +1,43 @@
-# Workflow to calculate ANIr and sequence coverage (depth and breadth) of genomes / MAGs from metagenomes by gene, intergenic region, contig, and whole genome.
+# Workflow to calculate ANIr and sequence coverage (depth and breadth) of genome(s) / MAG(s) from metagenomes by gene, intergenic region, contig, and whole genome.
 
-This workflow produces separate files in tab separated value (tsv) format for ANIr, sequence depth, and sequence breadth for the genes and contigs of a genome / MAG in fasta format. It also produces a file containing sequence depth at each position as well as a file with results calculated for the whole genome sequence. tsv files can be easily opened in Excel, or imported into Python with Pandas or read into R for further analysis. There is also an option to generate some summary plots.
+This workflow produces separate files in tab separated value (tsv) format for ANIr, sequence depth, and sequence breadth for the genes, intergenic regions, and contigs of a genome / MAG in fasta format. It also produces a file containing sequence depth at each position as well as a file with results calculated for the whole genome sequence. tsv files can be easily opened in Excel, imported into Python with Pandas, or read into R for further analysis. There is also an option to generate some summary plots.
 
-Coverage calculated as Truncated Average Depth (TAD):
-    * Set TAD to 100 for no truncatation.
-    * TAD 80 removes the top 10% and bottom 10% of base pair depths and caluclates coverage from the middle 80% of values. Intended to reduce effects of conserved motif peaks and contig edge valleys.
-    * Coverage = base pairs recruited / length of genome, contig, or gene
 
-Coverage calculated as Breadth:
-    * number of positions in reference sequence covered by at least one read alignment divided the length of the reference sequence.
+#### Coverage calculated as Truncated Average Depth (TAD):
+- Set TAD to 100 for no truncatation.
+- TAD 80 removes the top 10% and bottom 10% of base pair depths and caluclates coverage from the middle 80% of values. Intended to reduce effects of conserved motif peaks and contig edge valleys.
+- Coverage = base pairs recruited / length of genome, contig, or gene
 
-Relative Abundance is calculated as:
-    * base pairs recruited / base pairs in metagenome * 100
-    * It is the percent of base pairs recruited out of the total base pairs sequenced in the metagenome.
 
-ANIr is calculated as:
-    * average percent identity of sequence alignments for all reads (should be 1 blast match per read)
+#### Coverage calculated as Breadth:
+- number of positions in reference sequence covered by at least one read alignment divided the length of the reference sequence.
 
-This workflow leads to the following result files:
 
-    * 3 column tsv output of Contig(or gene_name), coverage(or ANIr), 
-      sequence length.
-    * Writes 11 files total:
-        - {out_file_prefix}_genome_by_bp.tsv
-        - {out_file_prefix}_genome.tsv
-        - {out_file_prefix}_contig_tad.tsv
-        - {out_file_prefix}_contig_breadth.tsv
-        - {out_file_prefix}_contig_anir.tsv
-        - {out_file_prefix}_gene_tad.tsv
-        - {out_file_prefix}_gene_breadth.tsv
-        - {out_file_prefix}_gene_anir.tsv
-        - {out_file_prefix}_intergene_tad.tsv
-        - {out_file_prefix}_intergene_breadth.tsv
-        - {out_file_prefix}_intergene_anir.tsv
+#### Relative Abundance is calculated as:
+- base pairs recruited / base pairs in metagenome * 100
+- It is the percent of base pairs recruited out of the total base pairs sequenced in the metagenome.
+
+
+#### ANIr is calculated as:
+- average percent identity of sequence alignments for all reads (should be 1 blast match per read)
+
+
+#### This workflow leads to the following result files:
+
+- 3 column tsv output of Contig(or gene_name), coverage(or ANIr), sequence length.
+- Writes 11 files total:
+    - {out_file_prefix}_genome_by_bp.tsv
+    - {out_file_prefix}_genome.tsv
+    - {out_file_prefix}_contig_tad.tsv
+    - {out_file_prefix}_contig_breadth.tsv
+    - {out_file_prefix}_contig_anir.tsv
+    - {out_file_prefix}_gene_tad.tsv
+    - {out_file_prefix}_gene_breadth.tsv
+    - {out_file_prefix}_gene_anir.tsv
+    - {out_file_prefix}_intergene_tad.tsv
+    - {out_file_prefix}_intergene_breadth.tsv
+    - {out_file_prefix}_intergene_anir.tsv
+
 
 *This workflow can also be used with Genomic FASTA and CDS from genomic FASTA files retrieved from the [NCBI assembly database](https://www.ncbi.nlm.nih.gov/assembly/). In this case, skip the renaming step for sequence names in the reference fasta file and skip Step 02. Use the -n flag for NCBI in Step 03.*
 
