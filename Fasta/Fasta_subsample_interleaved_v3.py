@@ -43,14 +43,21 @@ def interleaved_toDict(fasta):
     with open(fasta, 'r') as file:
         for name, seq in read_fasta(file):
 
-            entry = f'{name}\n{seq}\n'
-            data[readPair].append(entry)
-
             if readCount % 2 == 0:
+
+                entry = f'>{readPair}_read2\n{seq}\n'
+                data[readPair].append(entry)
+
                 pairCount += 1
                 readPair = f'readPair_{pairCount}'
+
                 if pairCount % 1000000 == 0:
                     print(f'\t... Read pairs processed: {pairCount}')
+
+            else:
+
+                entry = f'>{readPair}_read1\n{seq}\n'
+                data[readPair].append(entry)
 
             readCount += 1
 
