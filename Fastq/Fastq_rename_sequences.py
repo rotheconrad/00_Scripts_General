@@ -14,9 +14,9 @@ Filtering for best hits and retrieving the fasta sequence of a magic
 blast match becomes impossible once the unique identifier is lost.
 
 This script renames the fastq sequences with a simple name:
-@Read_0000000000001
-@Read_0000000000002
-etc...
+@prefix_i
+
+where prefix is supplied by the use and i = 1 through number of reads.
 
 -------------------------------------------
 Author :: Roth Conrad
@@ -55,9 +55,17 @@ def main():
         type=str,
         required=True
         )
+    parser.add_argument(
+        '-p', '--naming_prefix',
+        help='Please specify the prefix to use for renaming sequences!',
+        metavar=':',
+        type=str,
+        required=True
+        )
     args=vars(parser.parse_args())
 
     infile = args['fastq_input_file']
+    prefix = args['naming_prefix']
     outfile = args['fastq_input_file'].split('.')[0] + '.temp'
     readcount = 0
 
@@ -65,7 +73,7 @@ def main():
 
         for name, seq, blank, qal in read_fastq(f):
             readcount += 1
-            o.write(f'@Read_{readcount:013}\n{seq}\n{blank}\n{qal}\n')
+            o.write(f'@{prefix}_{readcount}\n{seq}\n{blank}\n{qal}\n')
 
     _ = subprocess.run(['mv', outfile, infile])
 
