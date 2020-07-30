@@ -60,8 +60,7 @@ def main():
         help='Please specify the prefix to use for renaming sequences!',
         metavar=':',
         type=str,
-        required=False,
-        default='Read'
+        required=True
         )
     args=vars(parser.parse_args())
 
